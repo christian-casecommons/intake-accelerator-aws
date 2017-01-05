@@ -1,0 +1,18 @@
+cf_stack_name: "{{ 'intake-accelerator-' + env }}"
+cf_stack_tags:
+  org:business:owner: CA Intake
+  org:business:product: Intake Accelerator
+  org:business:severity: High
+  org:tech:environment: "{{ env }}"
+  org:tech:contact: pema@casecommons.org
+
+cf_stack_inputs:
+  ApplicationAutoscalingDesiredCount: "{{ config_application_desired_count }}"
+  ApplicationAMI: "{{ config_application_ami }}"
+  ApplicationInstanceType: "{{ config_application_instance_type }}"
+  ApplicationLoadBalancerPort: "{{ config_application_frontend_port }}"
+  ApplicationPort: "{{ config_application_port }}"
+  ApplicationKeyName: "{{ config_application_keyname }}"
+  ApplicationDockerImage: "{{ config_application_image }}"
+  ApplicationDockerImageTag: "{{ config_application_tag }}"
+  Environment: "{{ env }}"
