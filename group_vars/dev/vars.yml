@@ -10,3 +10,6 @@ config_application_image: 429614120872.dkr.ecr.us-west-2.amazonaws.com/cwds/inta
 config_application_tag: latest
 config_application_frontend_port: 80
 config_application_port: 3000
+
+# Test secret
+config_application_secret: AQECAHgohc0dbuzR1L3lEdEkDC96PMYUEV9nITogJU2vbocgQAAAAGowaAYJKoZIhvcNAQcGoFswWQIBADBUBgkqhkiG9w0BBwEwHgYJYIZIAWUDBAEuMBEEDB4uW3mVBu3L8ErR1AIBEIAnSkLisBBGibq5wjbMR/0Ew9QDAbP37gXU8jdOYYZFzNOO8IwbnvHS
