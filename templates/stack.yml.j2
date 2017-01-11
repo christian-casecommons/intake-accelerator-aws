@@ -35,11 +35,10 @@ Resources:
   ApplicationDnsRecord:
     Type: "AWS::Route53::RecordSet"
     Properties:
-      Name:
-        Fn::Join: ["", [ "Ref": "Environment", "-intake-accelerator.", "Fn::ImportValue": "DefaultVpcDomain" ] ]
+      Name: 
+        Fn::Sub: "${Environment}-intake-accelerator.ca.mycasebook.org"
       TTL: "300"
-      HostedZoneName:
-        Fn::Join: ["", [ "Fn::ImportValue": "DefaultVpcDomain", "." ] ]
+      HostedZoneName: "ca.mycasebook.org."
       Type: "CNAME"
       Comment: 
         Fn::Sub: "Intake Accelerator Application - ${Environment}"
