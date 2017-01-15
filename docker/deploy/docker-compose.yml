@@ -1,0 +1,39 @@
+version: '2'
+
+services:
+  generate:
+    build:
+      context: ../../
+      dockerfile: docker/deploy/Dockerfile
+      args:
+        project_name: ${PROJECT_NAME}
+    environment:
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_SESSION_TOKEN: ${AWS_SESSION_TOKEN}
+      AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION}
+    command:
+      - ansible-playbook
+      - site.yml
+      - -e
+      - env=${ENVIRONMENT}
+      - -e
+      - cf_build_folder=/build
+      - --tags
+      - generate
+  deploy:
+    build:
+      context: ../../
+      dockerfile: docker/deploy/Dockerfile
+      args:
+        project_name: ${PROJECT_NAME}
+    environment:
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_SESSION_TOKEN: ${AWS_SESSION_TOKEN}
+      AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION}
+    command:
+      - ansible-playbook
+      - site.yml
+      - -e
+      - env=${ENVIRONMENT}
