@@ -11,6 +11,10 @@ config_application_tag: latest
 config_application_frontend_port: 443
 config_application_port: 3000
 
+# Nginx settings
+config_nginx_image: 429614120872.dkr.ecr.us-west-2.amazonaws.com/cwds/nginx
+config_nginx_tag: latest
+
 # Log settings
 config_log_retention: 30
 config_log_deletion_policy: Delete

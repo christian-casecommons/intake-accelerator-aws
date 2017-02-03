@@ -34,6 +34,13 @@ Parameters:
   LogRetention:
     Type: Number
     Description: Log retention in days
+  NginxDockerImage:
+    Type: String
+    Description: Docker Image for Nginx
+  NginxDockerImageTag:
+    Type: String
+    Description: Docker Image Tag for Nginx
+    Default: latest
 Resources:
   ApplicationDnsRecord:
     Type: "AWS::Route53::RecordSet"
@@ -270,6 +277,9 @@ Resources:
     Type: "AWS::ECS::TaskDefinition"
     Properties:
       NetworkMode: host
+      Volumes:
+        - Name: webroot
+          Host: {}
       ContainerDefinitions:
       - Name: intake
         Image:
@@ -281,21 +291,56 @@ Resources:
             awslogs-group: 
               Fn::Sub: ${AWS::StackName}/ecs/IntakeAcceleratorService/intake
             awslogs-region: { "Ref": "AWS::Region" }
-        PortMappings:
-          - ContainerPort: { "Ref": "ApplicationPort" }
-            Protocol: tcp
         Environment:
-          - Name: RAILS_SERVE_STATIC_FILES
-            Value: "true"
           - Name: TEST_SECRET
             Value:
               Fn::Sub: ${TestDecrypt.Plaintext}
+        MountPoints:
+          - SourceVolume: webroot
+            ContainerPath: /tmp
+        Command:
+          - bundle
+          - exec
+          - puma
+          - -e
+          - production
+          - -b
+          - unix:///tmp/app.sock
+          - -C
+          - config/puma.rb
+      - Name: nginx
+        Image:
+          Fn::Sub: ${NginxDockerImage}:${NginxDockerImageTag}
+        MemoryReservation: 200
+        LogConfiguration:
+          LogDriver: awslogs
+          Options:
+            awslogs-group: 
+              Fn::Sub: ${AWS::StackName}/ecs/IntakeAcceleratorService/nginx
+            awslogs-region: { "Ref": "AWS::Region" }
+        PortMappings:
+        - ContainerPort: { "Ref": "ApplicationPort" }
+          Protocol: tcp
+        Environment:
+          - Name: HTTP_PORT 
+            Value: { "Ref": "ApplicationPort" }
+          - Name: WEB_ROOT
+            Value: /ca_intake/public
+          - Name: UPSTREAM_URL
+            Value: unix:///tmp/app.sock
+        MountPoints:
+          - SourceVolume: webroot
+            ContainerPath: /tmp
+        VolumesFrom:
+          - SourceContainer: intake
+            ReadOnly: "true"
   IntakeAcceleratorService:
     Type: "AWS::ECS::Service"
     DependsOn:
       - ApplicationLoadBalancer
       - ApplicationAutoscaling
       - IntakeAcceleratorServiceLogGroup
+      - IntakeAcceleratorNginxLogGroup
     Properties:
       Cluster: { "Ref": "ApplicationCluster" }
       TaskDefinition: { "Ref": "ApplicationTaskDefinition" }
@@ -304,7 +349,7 @@ Resources:
           MinimumHealthyPercent: 50
           MaximumPercent: 200
       LoadBalancers:
-        - ContainerName: "intake"
+        - ContainerName: nginx
           ContainerPort: { "Ref": "ApplicationPort" }
           TargetGroupArn: { "Ref": "IntakeAcceleratorServiceTargetGroup" }
       Role: { "Ref": "EcsServiceRole" }
@@ -363,6 +408,12 @@ Resources:
       LogGroupName:
         Fn::Sub: ${AWS::StackName}/ecs/IntakeAcceleratorService/intake
       RetentionInDays: { "Ref": "LogRetention" }
+  IntakeAcceleratorNginxLogGroup:
+    Type: "AWS::Logs::LogGroup"
+    DeletionPolicy: "{{ config_log_deletion_policy }}"
+    Properties:
+      LogGroupName:
+        Fn::Sub: ${AWS::StackName}/ecs/IntakeAcceleratorService/nginx
   TestDecrypt:
     Type: "Custom::KMSDecrypt"
     Properties:
