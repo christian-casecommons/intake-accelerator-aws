@@ -68,12 +68,15 @@ Resources:
   ApplicationLoadBalancerApplicationListener:
     Type: "AWS::ElasticLoadBalancingV2::Listener"
     Properties:
+      Certificates:
+        - CertificateArn: 
+            Fn::ImportValue: CaMycasebookOrgCertArn
       DefaultActions:
         - TargetGroupArn: { "Ref": "IntakeAcceleratorServiceTargetGroup" }
           Type: forward
       LoadBalancerArn: { "Ref": "ApplicationLoadBalancer" }
       Port: { "Ref": "ApplicationLoadBalancerPort" }
-      Protocol: "HTTP"
+      Protocol: "HTTPS"
   IntakeAcceleratorServiceTargetGroup:
     Type: "AWS::ElasticLoadBalancingV2::TargetGroup"
     Properties:
@@ -289,7 +292,8 @@ Resources:
               Fn::Sub: ${TestDecrypt.Plaintext}
   IntakeAcceleratorService:
     Type: "AWS::ECS::Service"
-    DependsOn: 
+    DependsOn:
+      - ApplicationLoadBalancer
       - ApplicationAutoscaling
       - IntakeAcceleratorServiceLogGroup
     Properties:
