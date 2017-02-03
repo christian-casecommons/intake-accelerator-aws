@@ -11,5 +11,9 @@ config_application_tag: latest
 config_application_frontend_port: 80
 config_application_port: 3000
 
+# Log settings
+config_log_retention: 30
+config_log_deletion_policy: Delete
+ 
 # Test secret
 config_application_secret: AQECAHgohc0dbuzR1L3lEdEkDC96PMYUEV9nITogJU2vbocgQAAAAGowaAYJKoZIhvcNAQcGoFswWQIBADBUBgkqhkiG9w0BBwEwHgYJYIZIAWUDBAEuMBEEDB4uW3mVBu3L8ErR1AIBEIAnSkLisBBGibq5wjbMR/0Ew9QDAbP37gXU8jdOYYZFzNOO8IwbnvHS
