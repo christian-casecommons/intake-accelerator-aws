@@ -269,6 +269,7 @@ Resources:
   ApplicationTaskDefinition:
     Type: "AWS::ECS::TaskDefinition"
     Properties:
+      NetworkMode: host
       ContainerDefinitions:
       - Name: intake
         Image:
@@ -282,7 +283,6 @@ Resources:
             awslogs-region: { "Ref": "AWS::Region" }
         PortMappings:
           - ContainerPort: { "Ref": "ApplicationPort" }
-            HostPort: { "Ref": "ApplicationPort" }
             Protocol: tcp
         Environment:
           - Name: RAILS_SERVE_STATIC_FILES
