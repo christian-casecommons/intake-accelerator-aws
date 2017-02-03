@@ -274,7 +274,7 @@ Resources:
       - Name: intake
         Image:
           Fn::Sub: ${ApplicationDockerImage}:${ApplicationDockerImageTag}
-        Memory: 995
+        MemoryReservation: 500
         LogConfiguration:
           LogDriver: awslogs
           Options:
