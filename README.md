@@ -84,7 +84,7 @@ You can now add environment specific configuration settings in the newly created
 - [`site.yml`](site.yml) - the primary playbook to run.  Note you can create your own playbooks if required.
 - [`ansible.cfg`](ansible.cfg) - sets Ansible defaults for this playbook.
 - [`inventory`](inventory) - defines each environment you want to deploy to
-- [`roles/requirements.yml`](roles/requirements.yml) - defines requires Ansible roles for this playbook
+- [`roles/requirements.yml`](roles/requirements.yml) - defines required Ansible roles for this playbook
 - [`group_vars`](group_vars) folder - defines global and environment specific settings
 - [`templates/site.yml.j2`](templates/site.yml.j2) - CloudFormation template in YAML/Jinja format
 - `build/<timestamp>` folder - dynamically created for each playbook run.  Contains build artifacts including the generate CloudFormation stack file in YAML and compact JSON format that is uploaded to the CloudFormation service
