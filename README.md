@@ -4,7 +4,7 @@ This playbook deploys the Casecommons Intake Accelerator application to AWS usin
 
 A CloudFormation stack is generated for each environment that includes the following AWS resources:
 
-- `ApplicationLoadBalancer` resource - public Application Load Balancer
+- `ApplicationLoadBalancer` resource - public front end Application Load Balancer
 - `ApplicationAutoscaling` resource - EC2 Autoscaling Group for ECS container instances running the intake accelerator application
 - `ApplicationCluster` resource - ECS cluster for ECS container instances running the intake accelerator application
 - `ApplicationTaskDefinition` resource - ECS task definition including nginx and intake accelerator container definitions for running the intake accelerator application
@@ -79,6 +79,16 @@ $ touch group_vars/staging/vars.yml
 
 You can now add environment specific configuration settings in the newly created `vars.yml` file.
 
+### Playbook Structure Reference
+
+- [`site.yml`](site.yml) - the primary playbook to run.  Note you can create your own playbooks if required.
+- [`ansible.cfg`](ansible.cfg) - sets Ansible defaults for this playbook.
+- [`inventory`](inventory) - defines each environment you want to deploy to
+- [`roles/requirements.yml`](roles/requirements.yml) - defines requires Ansible roles for this playbook
+- [`group_vars`](group_vars) folder - defines global and environment specific settings
+- [`templates/site.yml.j2`](templates/site.yml.j2) - CloudFormation template in YAML/Jinja format
+- `build/<timestamp>` folder - dynamically created for each playbook run.  Contains build artifacts including the generate CloudFormation stack file in YAML and compact JSON format that is uploaded to the CloudFormation service
+
 ## Configuring an environment
 
 It is important to understand that this playbook essentially is a template generator that generates a CloudFormation stack template for a given environment from the following inputs:
@@ -99,7 +109,7 @@ As a best practice, you should adopt the following guidelines:
 
 ### Example
 
-Assume the following stack definition:
+Assume the following stack definition defined in `templates/stack.yml.j2`:
 
 ```
 AWSTemplateFormatVersion: "2010-09-09"
@@ -131,7 +141,7 @@ Resources:
 
 ```
 
-Notice that this template using Jinja markup to define the stack description, referencing the environment (as specified by the `env` variable), as the stack description cannot reference the `Environment` input parameter.
+Notice that this template uses Jinja markup to define the stack description, referencing the environment (as specified by the `env` variable), as the stack description cannot reference the `Environment` input parameter.
 
 The template includes three input parameters that are defined in the stack:
 
@@ -180,13 +190,3 @@ config_application_ami: ami-1111111
 config_application_instance_type: t2.large
 
 ```
-
-### Playbook Structure
-
-- [`site.yml`](site.yml) - the primary playbook to run.  Note you can create your own playbooks if required.
-- [`ansible.cfg`](ansible.cfg) - sets Ansible defaults for this playbook.
-- [`inventory`](inventory) - defines each environment you want to deploy to
-- [`roles/requirements.yml`](roles/requirements.yml) - defines requires Ansible roles for this playbook
-- [`group_vars`](group_vars) folder - defines global and environment specific settings
-- [`templates/site.yml.j2`](templates/site.yml.j2) - CloudFormation template in YAML/Jinja format
-- `build/<timestamp>` folder - dynamically created for each playbook run.  Contains build artifacts including the generate CloudFormation stack file in YAML and compact JSON format that is uploaded to the CloudFormation service
