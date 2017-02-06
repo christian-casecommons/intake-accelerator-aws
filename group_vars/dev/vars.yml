@@ -5,7 +5,7 @@ sts_role_arn: arn:aws:iam::429614120872:role/remoteAdmin
 config_application_keyname: admin-shared-key
 config_application_instance_type: t2.micro
 config_application_desired_count: 2
-config_application_ami: ami-e215a782
+config_application_ami: ami-fa1da79a
 config_application_image: 429614120872.dkr.ecr.us-west-2.amazonaws.com/cwds/intake
 config_application_tag: latest
 config_application_frontend_port: 443
@@ -18,6 +18,3 @@ config_nginx_tag: latest
 # Log settings
 config_log_retention: 30
 config_log_deletion_policy: Delete
- 
-# Test secret
-config_application_secret: AQECAHgohc0dbuzR1L3lEdEkDC96PMYUEV9nITogJU2vbocgQAAAAGowaAYJKoZIhvcNAQcGoFswWQIBADBUBgkqhkiG9w0BBwEwHgYJYIZIAWUDBAEuMBEEDB4uW3mVBu3L8ErR1AIBEIAnSkLisBBGibq5wjbMR/0Ew9QDAbP37gXU8jdOYYZFzNOO8IwbnvHS
