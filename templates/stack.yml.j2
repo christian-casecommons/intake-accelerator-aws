@@ -293,8 +293,16 @@ Resources:
               Fn::Sub: ${AWS::StackName}/ecs/IntakeAcceleratorService/intake
             awslogs-region: { "Ref": "AWS::Region" }
         Environment:
+          - Name: RAILS_ENV
+            Value: production
           - Name: API_URL
-            Value: https://dev-intake-api.ca.mycasebook.org
+            Value: https://dev-intake-api.ca.mycasebook.org/
+          - Name: http_proxy
+            Value:
+              Fn::ImportValue: DefaultProxyURL
+          - Name: https_proxy
+            Value:
+              Fn::ImportValue: DefaultProxyURL
         MountPoints:
           - SourceVolume: webroot
             ContainerPath: /tmp
