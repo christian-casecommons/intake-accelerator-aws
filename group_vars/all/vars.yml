@@ -19,3 +19,4 @@ cf_stack_inputs:
   LogRetention: "{{ config_log_retention }}"
   NginxDockerImage: "{{ config_nginx_image }}"
   NginxDockerImageTag: "{{ config_nginx_tag }}"
+  SecretKeyBaseCipher: "{{ config_application_secret_key_base }}"

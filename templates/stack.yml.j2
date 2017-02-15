@@ -41,6 +41,9 @@ Parameters:
     Type: String
     Description: Docker Image Tag for Nginx
     Default: latest
+  SecretKeyBaseCipher:
+    Type: String
+    Description: KMS Encrypted Secret Key Base
 Resources:
   ApplicationDnsRecord:
     Type: "AWS::Route53::RecordSet"
@@ -269,6 +272,12 @@ Resources:
                   - "ecr:GetDownloadUrlForLayer"
                   - "ecr:GetAuthorizationToken"
                 Resource: "*"
+              - Effect: "Allow"
+                Action:
+                - "kms:Decrypt"
+                - "kms:DescribeKey"
+                Resource:
+                  Fn::ImportValue: "CfnMasterKeyArn"
   ApplicationAutoscalingInstanceProfile:
     Type: "AWS::IAM::InstanceProfile"
     Properties:
@@ -295,6 +304,8 @@ Resources:
               Fn::Sub: ${AWS::StackName}/ecs/IntakeAcceleratorService/intake
             awslogs-region: { "Ref": "AWS::Region" }
         Environment:
+          - Name: KMS_SECRET_KEY_BASE
+            Value: { "Ref": "SecretKeyBaseCipher" }
           - Name: RAILS_ENV
             Value: production
           - Name: API_URL
