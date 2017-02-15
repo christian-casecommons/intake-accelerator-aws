@@ -302,9 +302,14 @@ Resources:
               Fn::Sub: ${AWS::StackName}/ecs/IntakeAcceleratorService/intake
             awslogs-region: { "Ref": "AWS::Region" }
         Environment:
+          - Name: AWS_DEFAULT_REGION
+            Value:
+              Fn::Sub: ${AWS::Region}
           - Name: KMS_SECRET_KEY_BASE
             Value: { "Ref": "SecretKeyBaseCipher" }
           - Name: RAILS_ENV
+            Value: production
+          - Name: NODE_ENV
             Value: production
           - Name: API_URL
             Value: https://dev-intake-api.ca.mycasebook.org/
@@ -314,6 +319,8 @@ Resources:
           - Name: https_proxy
             Value:
               Fn::ImportValue: DefaultProxyURL
+          - Name: no_proxy
+            Value: "169.254.169.254,localhost"
         MountPoints:
           - SourceVolume: webroot
             ContainerPath: /tmp
