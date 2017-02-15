@@ -47,6 +47,9 @@ Parameters:
     Type: String
     Description: Redis cache version
     Default: "3.2.4"
+  ApplicationApiUrl:
+    Type: String
+    Description: Intake API URL Endpoint
   Environment:
     Type: String
     Description: Stack Environment
@@ -391,7 +394,7 @@ Resources:
           - Name: NODE_ENV
             Value: production
           - Name: API_URL
-            Value: https://dev-intake-api.ca.mycasebook.org/
+            Value: { "Ref": "ApplicationApiUrl" }
           - Name: REDIS_HOST
             Value:
               Fn::Sub: ${ApplicationCache.PrimaryEndPoint.Address}
