@@ -28,6 +28,25 @@ Parameters:
   ApplicationPort:
     Type: Number
     Description: Application HTTP Port
+  ApplicationCacheFailover:
+    Type: String
+    Description: Enables/disables Redis cache automatic failover
+    AllowedValues:
+      - "true"
+      - "false"
+    Default: "false"
+  ApplicationCacheInstanceCount:
+    Type: Number
+    Description: Number of Redis cache instances
+    Default: 1
+  ApplicationCacheInstanceType:
+    Type: String
+    Description: Type of Redis cache instance
+    Default: cache.t2.micro
+  ApplicationCacheVersion:
+    Type: String
+    Description: Redis cache version
+    Default: "3.2.4"
   Environment:
     Type: String
     Description: Stack Environment
@@ -44,6 +63,13 @@ Parameters:
   SecretKeyBaseCipher:
     Type: String
     Description: KMS Encrypted Secret Key Base
+
+Conditions:
+  ApplicationCacheFailoverEnabled:
+    Fn::Equals: 
+      - { "Ref" : "ApplicationCacheFailover" }
+      - "true"
+
 Resources:
   ApplicationDnsRecord:
     Type: "AWS::Route53::RecordSet"
@@ -281,6 +307,62 @@ Resources:
     Properties:
       Path: "/"
       Roles: [ { "Ref": "ApplicationAutoscalingRole" } ]
+  ApplicationCache:
+    Type: "AWS::ElastiCache::ReplicationGroup"
+    Properties:
+      ReplicationGroupDescription: 
+        Fn::Sub: ${AWS::StackName}-redis-cache
+      AutomaticFailoverEnabled: { "Ref": "ApplicationCacheFailover" }
+      NumCacheClusters: { "Ref": "ApplicationCacheInstanceCount" }
+      CacheNodeType: { "Ref": "ApplicationCacheInstanceType" }
+      Port: "6379"
+      Engine: "redis"
+      EngineVersion: { "Ref": "ApplicationCacheVersion" }
+      CacheSubnetGroupName: { "Ref": "ApplicationCacheSubnetGroup" }
+      PreferredMaintenanceWindow: "sun:10:30-sun:12:00"
+      SnapshotWindow: 
+        Fn::If:
+          - "ApplicationCacheFailoverEnabled"
+          - "08:00-10:00"
+          - { "Ref": "AWS::NoValue" }
+      SecurityGroupIds:
+        - { "Ref" : "ApplicationCacheSecurityGroup" }
+  ApplicationCacheSubnetGroup:
+    Type: "AWS::ElastiCache::SubnetGroup"
+    Properties:
+      Description:
+        Fn::Sub: ${AWS::StackName}-redis-cache-subnet-group
+      SubnetIds:
+        - Fn::ImportValue: DefaultHighSubnetA
+        - Fn::ImportValue: DefaultHighSubnetB
+  ApplicationCacheSecurityGroup:
+    Type: "AWS::EC2::SecurityGroup"
+    Properties:
+      GroupDescription:
+        Fn::Sub: ${AWS::StackName}-redis-cache-sg
+      VpcId:
+        Fn::ImportValue: DefaultVpcId
+      SecurityGroupEgress:
+        - IpProtocol: "icmp"
+          FromPort : -1
+          ToPort : -1
+          CidrIp: "192.0.2.0/24"
+  ApplicationToApplicationCacheEgress:
+    Type: "AWS::EC2::SecurityGroupEgress"
+    Properties:
+      IpProtocol: "tcp"
+      FromPort: "6379"
+      ToPort: "6379"
+      GroupId: { "Ref": "ApplicationAutoscalingSecurityGroup" }
+      DestinationSecurityGroupId: { "Ref": "ApplicationCacheSecurityGroup" }
+  ApplicationToApplicationCacheIngress:
+    Type: "AWS::EC2::SecurityGroupIngress"
+    Properties:
+      IpProtocol: "tcp"
+      FromPort: "6379"
+      ToPort: "6379"
+      GroupId: { "Ref": "ApplicationCacheSecurityGroup" }
+      SourceSecurityGroupId: { "Ref": "ApplicationAutoscalingSecurityGroup" }
   ApplicationCluster:
     Type: "AWS::ECS::Cluster"
   ApplicationTaskDefinition:
@@ -313,6 +395,11 @@ Resources:
             Value: production
           - Name: API_URL
             Value: https://dev-intake-api.ca.mycasebook.org/
+          - Name: REDIS_HOST
+            Value:
+              Fn::Sub: ${ApplicationCache.PrimaryEndPoint.Address}
+          - Name: REDIS_PORT
+            Value: "6379"
           - Name: http_proxy
             Value:
               Fn::ImportValue: DefaultProxyURL
