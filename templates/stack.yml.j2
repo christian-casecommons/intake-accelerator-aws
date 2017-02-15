@@ -50,6 +50,16 @@ Parameters:
   ApplicationApiUrl:
     Type: String
     Description: Intake API URL Endpoint
+  ApplicationAuthentication:
+    Type: String
+    Description: Enables or disables authentication
+    Default: "true"
+    AllowedValues:
+      - "true"
+      - "false"
+  ApplicationAuthenticationUrl:
+    Type: String
+    Description: Authentication URL for the Intake Accelerator application
   Environment:
     Type: String
     Description: Stack Environment
@@ -400,6 +410,10 @@ Resources:
               Fn::Sub: ${ApplicationCache.PrimaryEndPoint.Address}
           - Name: REDIS_PORT
             Value: "6379"
+          - Name: AUTHENTICATION
+            Value: { "Ref": "ApplicationAuthentication" }
+          - Name: AUTHENTICATION_URL
+            Value: { "Ref": "ApplicationAuthenticationUrl" }
           - Name: http_proxy
             Value:
               Fn::ImportValue: DefaultProxyURL

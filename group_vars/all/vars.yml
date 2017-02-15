@@ -16,6 +16,8 @@ cf_stack_inputs:
   ApplicationDockerImage: "{{ config_application_image }}"
   ApplicationDockerImageTag: "{{ config_application_tag }}"
   ApplicationApiUrl: "{{ config_application_api_url }}"
+  ApplicationAuthentication: "{{ config_application_authentication }}"
+  ApplicationAuthenticationUrl: "{{ config_application_authentication_url }}"
   Environment: "{{ env }}"
   LogRetention: "{{ config_log_retention }}"
   NginxDockerImage: "{{ config_nginx_image }}"

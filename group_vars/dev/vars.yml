@@ -12,6 +12,8 @@ config_application_frontend_port: 443
 config_application_port: 3000
 config_application_secret_key_base: AQECAHgohc0dbuzR1L3lEdEkDC96PMYUEV9nITogJU2vbocgQAAAAIswgYgGCSqGSIb3DQEHBqB7MHkCAQAwdAYJKoZIhvcNAQcBMB4GCWCGSAFlAwQBLjARBAw62iH9NcNJO/4TB5oCARCARxj8nW4pb1lLJuwFwEjuV3GHv7RZNHMgTyFldE6IJnbcPn95+RAYb7Y9LGlKwLLKDw+HS2ChZDQhbzFMzjhSAZeHczsANpi9
 config_application_api_url: https://dev-intake-api.ca.mycasebook.org/
+config_application_authentication: "true"
+config_application_authentication_url: http://perry.intake.cwds.tabordasolutions.net
 
 # Nginx settings
 config_nginx_image: 429614120872.dkr.ecr.us-west-2.amazonaws.com/cwds/nginx
