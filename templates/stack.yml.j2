@@ -28,6 +28,9 @@ Parameters:
   ApplicationPort:
     Type: Number
     Description: Application HTTP Port
+  ApplicationDomain:
+    Type: String
+    Description: Base public domain of the application URL
   ApplicationCacheFailover:
     Type: String
     Description: Enables/disables Redis cache automatic failover
@@ -88,7 +91,7 @@ Resources:
     Type: "AWS::Route53::RecordSet"
     Properties:
       Name: 
-        Fn::Sub: "${Environment}-intake-accelerator.ca.mycasebook.org"
+        Fn::Sub: "${Environment}-intake.${ApplicationDomain}"
       TTL: "300"
       HostedZoneName: "ca.mycasebook.org."
       Type: "CNAME"
@@ -118,8 +121,7 @@ Resources:
     Type: "AWS::ElasticLoadBalancingV2::Listener"
     Properties:
       Certificates:
-        - CertificateArn: 
-            Fn::ImportValue: CaMycasebookOrgCertArn
+        - CertificateArn: {{ config_lb_certificate_arn | to_json }}
       DefaultActions:
         - TargetGroupArn: { "Ref": "IntakeAcceleratorServiceTargetGroup" }
           Type: forward
@@ -396,6 +398,7 @@ Resources:
             awslogs-group: 
               Fn::Sub: ${AWS::StackName}/ecs/IntakeAcceleratorService/intake
             awslogs-region: { "Ref": "AWS::Region" }
+            awslogs-stream-prefix: docker
         Environment:
           - Name: KMS_SECRET_KEY_BASE
             Value: { "Ref": "SecretKeyBaseCipher" }
@@ -445,6 +448,7 @@ Resources:
             awslogs-group: 
               Fn::Sub: ${AWS::StackName}/ecs/IntakeAcceleratorService/nginx
             awslogs-region: { "Ref": "AWS::Region" }
+            awslogs-stream-prefix: docker
         PortMappings:
         - ContainerPort: { "Ref": "ApplicationPort" }
           Protocol: tcp

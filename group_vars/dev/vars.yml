@@ -14,10 +14,15 @@ config_application_secret_key_base: AQECAHgohc0dbuzR1L3lEdEkDC96PMYUEV9nITogJU2v
 config_application_api_url: https://dev-intake-api.ca.mycasebook.org/
 config_application_authentication: "true"
 config_application_authentication_url: http://perry.intake.cwds.tabordasolutions.net
+config_application_domain: ca.mycasebook.org
 
 # Nginx settings
 config_nginx_image: 429614120872.dkr.ecr.us-west-2.amazonaws.com/cwds/nginx
 config_nginx_tag: latest
+
+# Load balancer settings
+config_lb_certificate_arn:
+  Fn::ImportValue: CaMycasebookOrgCertArn
 
 # Log settings
 config_log_retention: 30
