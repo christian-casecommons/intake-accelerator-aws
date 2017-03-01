@@ -93,7 +93,8 @@ Resources:
       Name: 
         Fn::Sub: "${Environment}-intake.${ApplicationDomain}"
       TTL: "300"
-      HostedZoneName: "ca.mycasebook.org."
+      HostedZoneName: 
+        Fn::Sub: "${ApplicationDomain}."
       Type: "CNAME"
       Comment: 
         Fn::Sub: "Intake Accelerator Application - ${Environment}"
