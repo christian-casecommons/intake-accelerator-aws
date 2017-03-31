@@ -3,13 +3,13 @@ AWSTemplateFormatVersion: "2010-09-09"
 Description: Intake Accelerator - {{ env }}
 
 Parameters:
-  ApplicationAMI:
+  ApplicationImageId:
     Type: String
     Description: Application Amazon Machine Image ID
   ApplicationInstanceType:
     Type: String
     Description: Application EC2 Instance Type
-  ApplicationAutoscalingDesiredCount:
+  ApplicationDesiredCount:
     Type: Number
     Description: Application AutoScaling Group Desired Count
   ApplicationDockerImage:
@@ -35,9 +35,9 @@ Parameters:
     Type: String
     Description: Enables/disables Redis cache automatic failover
     AllowedValues:
-      - "true"
-      - "false"
-    Default: "false"
+      - "True"
+      - "False"
+    Default: "False"
   ApplicationCacheInstanceCount:
     Type: Number
     Description: Number of Redis cache instances
@@ -63,9 +63,9 @@ Parameters:
   ApplicationAuthenticationUrl:
     Type: String
     Description: Authentication URL for the Intake Accelerator application
-  Environment:
+  ApplicationHostname:
     Type: String
-    Description: Stack Environment
+    Description: Host portion of the application URL
   LogRetention:
     Type: Number
     Description: Log retention in days
@@ -76,28 +76,32 @@ Parameters:
     Type: String
     Description: Docker Image Tag for Nginx
     Default: latest
-  SecretKeyBaseCipher:
+  ApplicationSecretKey:
     Type: String
     Description: KMS Encrypted Secret Key Base
 
 Conditions:
+  ApplicationSingleInstanceCondition:
+    Fn::Equals:
+      - Ref: ApplicationDesiredCount
+      - 1
   ApplicationCacheFailoverEnabled:
     Fn::Equals: 
       - { "Ref" : "ApplicationCacheFailover" }
-      - "true"
+      - "True"
 
 Resources:
   ApplicationDnsRecord:
     Type: "AWS::Route53::RecordSet"
     Properties:
       Name: 
-        Fn::Sub: "${Environment}-intake.${ApplicationDomain}"
+        Fn::Sub: "${ApplicationHostname}.${ApplicationDomain}"
       TTL: "300"
       HostedZoneName: 
         Fn::Sub: "${ApplicationDomain}."
       Type: "CNAME"
       Comment: 
-        Fn::Sub: "Intake Accelerator Application - ${Environment}"
+        Fn::Sub: "Intake Accelerator Application - ${AWS::StackName}"
       ResourceRecords: 
         - Fn::Sub: "${ApplicationLoadBalancer.DNSName}"
   ApplicationLoadBalancer:
@@ -117,7 +121,7 @@ Resources:
       Tags:
         - Key: "Name"
           Value:
-            Fn::Sub: ${AWS::StackName}-${Environment}-lb
+            Fn::Sub: ${AWS::StackName}-lb
   ApplicationLoadBalancerApplicationListener:
     Type: "AWS::ElasticLoadBalancingV2::Listener"
     Properties:
@@ -176,11 +180,11 @@ Resources:
       - MessagesLogGroup
     CreationPolicy:
       ResourceSignal:
-        Count: { "Ref": "ApplicationAutoscalingDesiredCount"}
+        Count: { "Ref": "ApplicationDesiredCount"}
         Timeout: "PT15M"
     UpdatePolicy:
       AutoScalingRollingUpdate:
-        MinInstancesInService: { "Ref": "ApplicationAutoscalingDesiredCount"}
+        MinInstancesInService: { "Ref": "ApplicationDesiredCount"}
         MinSuccessfulInstancesPercent: "100"
         WaitOnResourceSignals: "true"
         PauseTime: "PT15M"
@@ -191,7 +195,7 @@ Resources:
       LaunchConfigurationName: { "Ref" : "ApplicationAutoscalingLaunchConfiguration" }
       MinSize: "0"
       MaxSize: "4"
-      DesiredCapacity: { "Ref": "ApplicationAutoscalingDesiredCount"}
+      DesiredCapacity: { "Ref": "ApplicationDesiredCount"}
       Tags:
         - Key: Name
           Value:
@@ -219,7 +223,7 @@ Resources:
               content: 
                 Fn::Sub: "ECS_CLUSTER=${ApplicationCluster}\n"
     Properties:
-      ImageId: { "Ref": "ApplicationAMI" }
+      ImageId: { "Ref": "ApplicationImageId" }
       InstanceType: { "Ref": "ApplicationInstanceType" }
       IamInstanceProfile: { "Ref": "ApplicationAutoscalingInstanceProfile" }
       KeyName: { "Ref": "ApplicationKeyName" }
@@ -402,7 +406,7 @@ Resources:
             awslogs-stream-prefix: docker
         Environment:
           - Name: KMS_SECRET_KEY_BASE
-            Value: { "Ref": "SecretKeyBaseCipher" }
+            Value: { "Ref": "ApplicationSecretKey" }
           - Name: RAILS_ENV
             Value: production
           - Name: NODE_ENV
@@ -476,9 +480,13 @@ Resources:
     Properties:
       Cluster: { "Ref": "ApplicationCluster" }
       TaskDefinition: { "Ref": "ApplicationTaskDefinition" }
-      DesiredCount: { "Ref": "ApplicationAutoscalingDesiredCount"}
+      DesiredCount: { "Ref": "ApplicationDesiredCount"}
       DeploymentConfiguration:
-          MinimumHealthyPercent: 50
+          MinimumHealthyPercent:
+            Fn::If:
+              - "ApplicationSingleInstanceCondition"
+              - 0
+              - 50
           MaximumPercent: 200
       LoadBalancers:
         - ContainerName: nginx

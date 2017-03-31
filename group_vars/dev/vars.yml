@@ -2,23 +2,24 @@
 sts_role_arn: arn:aws:iam::429614120872:role/remoteAdmin
 
 # Application settings
-config_application_keyname: admin-shared-key
+config_application_key_name: admin-shared-key
 config_application_instance_type: t2.micro
 config_application_desired_count: 2
-config_application_ami: ami-022b9262
-config_application_image: 429614120872.dkr.ecr.us-west-2.amazonaws.com/cwds/intake
-config_application_tag: latest
-config_application_frontend_port: 443
+config_application_image_id: ami-2027b340
+config_application_docker_image: 429614120872.dkr.ecr.us-west-2.amazonaws.com/cwds/intake
+config_application_docker_image_tag: latest
+config_application_load_balancer_port: 443
 config_application_port: 3000
-config_application_secret_key_base: AQECAHgohc0dbuzR1L3lEdEkDC96PMYUEV9nITogJU2vbocgQAAAAIswgYgGCSqGSIb3DQEHBqB7MHkCAQAwdAYJKoZIhvcNAQcBMB4GCWCGSAFlAwQBLjARBAw62iH9NcNJO/4TB5oCARCARxj8nW4pb1lLJuwFwEjuV3GHv7RZNHMgTyFldE6IJnbcPn95+RAYb7Y9LGlKwLLKDw+HS2ChZDQhbzFMzjhSAZeHczsANpi9
+config_application_secret_key: AQECAHgohc0dbuzR1L3lEdEkDC96PMYUEV9nITogJU2vbocgQAAAAIswgYgGCSqGSIb3DQEHBqB7MHkCAQAwdAYJKoZIhvcNAQcBMB4GCWCGSAFlAwQBLjARBAw62iH9NcNJO/4TB5oCARCARxj8nW4pb1lLJuwFwEjuV3GHv7RZNHMgTyFldE6IJnbcPn95+RAYb7Y9LGlKwLLKDw+HS2ChZDQhbzFMzjhSAZeHczsANpi9
 config_application_api_url: https://dev-intake-api.ca.mycasebook.org/
 config_application_authentication: "true"
 config_application_authentication_url: http://perry.intake.cwds.tabordasolutions.net
+config_application_hostname: dev-intake
 config_application_domain: ca.mycasebook.org
 
 # Nginx settings
-config_nginx_image: 429614120872.dkr.ecr.us-west-2.amazonaws.com/cwds/nginx
-config_nginx_tag: latest
+config_nginx_docker_image: 429614120872.dkr.ecr.us-west-2.amazonaws.com/cwds/nginx
+config_nginx_docker_image_tag: latest
 
 # Load balancer settings
 config_lb_certificate_arn:

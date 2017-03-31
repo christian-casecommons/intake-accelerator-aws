@@ -5,22 +5,3 @@ cf_stack_tags:
   org:business:severity: High
   org:tech:environment: "{{ env }}"
   org:tech:contact: pema@casecommons.org
-
-cf_stack_inputs:
-  ApplicationAutoscalingDesiredCount: "{{ config_application_desired_count }}"
-  ApplicationAMI: "{{ config_application_ami }}"
-  ApplicationInstanceType: "{{ config_application_instance_type }}"
-  ApplicationLoadBalancerPort: "{{ config_application_frontend_port }}"
-  ApplicationPort: "{{ config_application_port }}"
-  ApplicationKeyName: "{{ config_application_keyname }}"
-  ApplicationDockerImage: "{{ config_application_image }}"
-  ApplicationDockerImageTag: "{{ config_application_tag }}"
-  ApplicationApiUrl: "{{ config_application_api_url }}"
-  ApplicationAuthentication: "{{ config_application_authentication }}"
-  ApplicationAuthenticationUrl: "{{ config_application_authentication_url }}"
-  ApplicationDomain: "{{ config_application_domain }}"
-  Environment: "{{ env }}"
-  LogRetention: "{{ config_log_retention }}"
-  NginxDockerImage: "{{ config_nginx_image }}"
-  NginxDockerImageTag: "{{ config_nginx_tag }}"
-  SecretKeyBaseCipher: "{{ config_application_secret_key_base }}"
