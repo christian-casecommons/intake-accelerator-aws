@@ -191,6 +191,13 @@ config_application_instance_type: t2.large
 
 ```
 
+## Release Notes
+
+### Version 0.1.0
+
+- First Release
+
+
 ## License
 
 Copyright (C) 2017.  Case Commons, Inc.
