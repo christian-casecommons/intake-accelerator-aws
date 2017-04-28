@@ -1,5 +1,5 @@
 # STS settings
-sts_role_arn: arn:aws:iam::429614120872:role/remoteAdmin
+Sts.Role: arn:aws:iam::429614120872:role/remoteAdmin
 
 # Application settings
 config_application_key_name: admin-shared-key
