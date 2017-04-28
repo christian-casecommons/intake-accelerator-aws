@@ -27,4 +27,6 @@ config_lb_certificate_arn:
 
 # Log settings
 config_log_retention: 30
-config_log_deletion_policy: Delete
+# Add a global override to resources of the given type
+AWS::Logs::LogGroup:
+  DeletionPolicy: Delete
