@@ -1,5 +1,5 @@
-cf_stack_name: "{{ 'intake-accelerator-' + env }}"
-cf_stack_tags:
+Stack.Name: "{{ 'intake-accelerator-' + env }}"
+Stack.Tags:
   org:business:owner: CA Intake
   org:business:product: Intake Accelerator
   org:business:severity: High

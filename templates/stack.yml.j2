@@ -25,6 +25,9 @@ Parameters:
   ApplicationLoadBalancerPort:
     Type: Number
     Description: Application Front End HTTP Port
+  ApplicationLoadBalancerCertificateArn:
+    Type: String
+    Description: Application Load Balancer Certificate ARN
   ApplicationPort:
     Type: Number
     Description: Application HTTP Port
@@ -126,7 +129,9 @@ Resources:
     Type: "AWS::ElasticLoadBalancingV2::Listener"
     Properties:
       Certificates:
-        - CertificateArn: {{ config_lb_certificate_arn | to_json }}
+        - CertificateArn:
+            Fn::ImportValue:
+              Ref: ApplicationLoadBalancerCertificateArn
       DefaultActions:
         - TargetGroupArn: { "Ref": "IntakeAcceleratorServiceTargetGroup" }
           Type: forward
@@ -508,49 +513,49 @@ Resources:
         - "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceRole"
   DmesgLogGroup:
     Type: "AWS::Logs::LogGroup"
-    DeletionPolicy: "{{ config_log_deletion_policy }}"
+    DeletionPolicy: Delete
     Properties:
       LogGroupName: 
         Fn::Sub: ${AWS::StackName}/ec2/ApplicationAutoscaling/var/log/dmesg
       RetentionInDays: { "Ref": "LogRetention" }
   DockerLogGroup:
     Type: "AWS::Logs::LogGroup"
-    DeletionPolicy: "{{ config_log_deletion_policy }}"
+    DeletionPolicy: Delete
     Properties:
       LogGroupName:
         Fn::Sub: ${AWS::StackName}/ec2/ApplicationAutoscaling/var/log/docker
       RetentionInDays: { "Ref": "LogRetention" }
   EcsAgentLogGroup:
     Type: "AWS::Logs::LogGroup"
-    DeletionPolicy: "{{ config_log_deletion_policy }}"
+    DeletionPolicy: Delete
     Properties:
       LogGroupName: 
         Fn::Sub: ${AWS::StackName}/ec2/ApplicationAutoscaling/var/log/ecs/ecs-agent
       RetentionInDays: { "Ref": "LogRetention" }
   EcsInitLogGroup:
     Type: "AWS::Logs::LogGroup"
-    DeletionPolicy: "{{ config_log_deletion_policy }}"
+    DeletionPolicy: Delete
     Properties:
       LogGroupName:
         Fn::Sub: ${AWS::StackName}/ec2/ApplicationAutoscaling/var/log/ecs/ecs-init
       RetentionInDays: { "Ref": "LogRetention" }
   MessagesLogGroup:
     Type: "AWS::Logs::LogGroup"
-    DeletionPolicy: "{{ config_log_deletion_policy }}"
+    DeletionPolicy: Delete
     Properties:
       LogGroupName:
         Fn::Sub: ${AWS::StackName}/ec2/ApplicationAutoscaling/var/log/messages
       RetentionInDays: { "Ref": "LogRetention" }
   IntakeAcceleratorServiceLogGroup:
     Type: "AWS::Logs::LogGroup"
-    DeletionPolicy: "{{ config_log_deletion_policy }}"
+    DeletionPolicy: Delete
     Properties:
       LogGroupName:
         Fn::Sub: ${AWS::StackName}/ecs/IntakeAcceleratorService/intake
       RetentionInDays: { "Ref": "LogRetention" }
   IntakeAcceleratorNginxLogGroup:
     Type: "AWS::Logs::LogGroup"
-    DeletionPolicy: "{{ config_log_deletion_policy }}"
+    DeletionPolicy: Delete
     Properties:
       LogGroupName:
         Fn::Sub: ${AWS::StackName}/ecs/IntakeAcceleratorService/nginx
