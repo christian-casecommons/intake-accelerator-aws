@@ -93,9 +93,9 @@ Resources:
         Fn::Sub: ${AWS::StackName}-redis-cache-subnet-group
       SubnetIds:
         - Fn::ImportValue:
-            Fn::Sub ${VpcName}${Subnets}SubnetA
+            Fn::Sub: ${VpcName}${Subnets}SubnetA
         - Fn::ImportValue:
-            Fn::Sub ${VpcName}${Subnets}SubnetB
+            Fn::Sub: ${VpcName}${Subnets}SubnetB
   SecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -103,7 +103,7 @@ Resources:
         Fn::Sub: ${AWS::StackName}-redis-cache-sg
       VpcId:
         Fn::ImportValue:
-          Fn::Sub ${VpcName}VpcId
+          Fn::Sub: ${VpcName}VpcId
       SecurityGroupEgress:
         - IpProtocol: icmp
           FromPort : -1

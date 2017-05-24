@@ -150,8 +150,7 @@ Resources:
         Ref: ApplicationCacheVersion
       MaintenanceWindow: "sun:10:30-sun:12:00"
       IngressSecurityGroup:
-        Fn.Sub: ${ApplicationCluster.SecurityGroup}
-
+        Fn::Sub: ${ApplicationCluster.SecurityGroup}
   ApplicationTaskDefinition:
     Type: AWS::ECS::TaskDefinition
     Properties:
