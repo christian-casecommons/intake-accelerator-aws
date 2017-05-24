@@ -63,6 +63,13 @@ Parameters:
     AllowedValues:
       - "true"
       - "false"
+  ApplicationCentralizedSesion:
+    Type: String
+    Description: Enables or disables centralized session management
+    Default: "false"
+    AllowedValues:
+      - "true"
+      - "false"
   ApplicationAuthenticationUrl:
     Type: String
     Description: Authentication URL for the Intake Accelerator application
@@ -182,6 +189,9 @@ Resources:
           - Name: API_URL
             Value:
               Ref: ApplicationApiUrl
+          - Name: CENTRALIZED_SESSIONS
+            Value:
+              Ref: ApplicationCentralizedSesion
           - Name: REDIS_HOST
             Value:
               Fn::Sub: ${ApplicationCache.EndPoint}

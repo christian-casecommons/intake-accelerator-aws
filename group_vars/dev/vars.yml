@@ -15,6 +15,7 @@ Stack.Inputs.ApplicationSecretKey: AQECAHgohc0dbuzR1L3lEdEkDC96PMYUEV9nITogJU2vb
 Stack.Inputs.ApplicationApiUrl: https://dev-intake-api.ca.mycasebook.org/
 Stack.Inputs.ApplicationAuthentication: "true"
 Stack.Inputs.ApplicationAuthenticationUrl: http://perry.intake.cwds.tabordasolutions.net
+Stack.Inputs.ApplicationCentralizedSesion: "true"
 Stack.Inputs.ApplicationHostname: dev-intake
 Stack.Inputs.ApplicationDomain: ca.mycasebook.org
 
