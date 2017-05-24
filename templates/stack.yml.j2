@@ -22,10 +22,10 @@ Parameters:
   ApplicationKeyName:
     Type: String
     Description: EC2 Key Pair for Application SSH Access
-  ApplicationLoadBalancerPort:
+  ApplicationFrontEndPort:
     Type: Number
     Description: Application Front End HTTP Port
-  ApplicationLoadBalancerCertificateArn:
+  ApplicationFrontEndCertificateArn:
     Type: String
     Description: Application Load Balancer Certificate ARN
   ApplicationPort:
@@ -88,310 +88,72 @@ Conditions:
     Fn::Equals:
       - Ref: ApplicationDesiredCount
       - 1
-  ApplicationCacheFailoverEnabled:
-    Fn::Equals: 
-      - { "Ref" : "ApplicationCacheFailover" }
-      - "True"
 
 Resources:
-  ApplicationDnsRecord:
-    Type: "AWS::Route53::RecordSet"
+  # Intake API resources
+  ApplicationFrontEnd:
+    Type: Stack::Transform
+    Template: alb.yml.j2
     Properties:
-      Name: 
-        Fn::Sub: "${ApplicationHostname}.${ApplicationDomain}"
-      TTL: "300"
-      HostedZoneName: 
-        Fn::Sub: "${ApplicationDomain}."
-      Type: "CNAME"
-      Comment: 
-        Fn::Sub: "Intake Accelerator Application - ${AWS::StackName}"
-      ResourceRecords: 
-        - Fn::Sub: "${ApplicationLoadBalancer.DNSName}"
-  ApplicationLoadBalancer:
-    Type: "AWS::ElasticLoadBalancingV2::LoadBalancer"
-    Properties:
-      Scheme: "internet-facing"
-      SecurityGroups:
-       - Ref: "ApplicationLoadBalancerSecurityGroup"
-      Subnets:
-        - Fn::ImportValue: DefaultPublicSubnetA
-        - Fn::ImportValue: DefaultPublicSubnetB
-      LoadBalancerAttributes: 
-        - Key: "deletion_protection.enabled"
-          Value: false
-        - Key: "idle_timeout.timeout_seconds"
-          Value: 30
-      Tags:
-        - Key: "Name"
-          Value:
-            Fn::Sub: ${AWS::StackName}-lb
-  ApplicationLoadBalancerApplicationListener:
-    Type: "AWS::ElasticLoadBalancingV2::Listener"
-    Properties:
-      Certificates:
-        - CertificateArn:
-            Fn::ImportValue:
-              Ref: ApplicationLoadBalancerCertificateArn
-      DefaultActions:
-        - TargetGroupArn: { "Ref": "IntakeAcceleratorServiceTargetGroup" }
-          Type: forward
-      LoadBalancerArn: { "Ref": "ApplicationLoadBalancer" }
-      Port: { "Ref": "ApplicationLoadBalancerPort" }
-      Protocol: "HTTPS"
-  IntakeAcceleratorServiceTargetGroup:
-    Type: "AWS::ElasticLoadBalancingV2::TargetGroup"
-    Properties:
-      VpcId:
-        Fn::ImportValue: "DefaultVpcId"
-      Protocol: "HTTP"
-      Port: { "Ref": "ApplicationPort" }
-      TargetGroupAttributes:
-        - Key: "deregistration_delay.timeout_seconds"
-          Value: 60
-  ApplicationLoadBalancerSecurityGroup:
-    Type: "AWS::EC2::SecurityGroup"
-    Properties:
-      VpcId:
-        Fn::ImportValue: "DefaultVpcId"
-      GroupDescription: "Intake Accelerator Load Balancer Security Group"
-      SecurityGroupIngress:
-        - IpProtocol: "tcp"
-          FromPort: { "Ref": "ApplicationLoadBalancerPort" }
-          ToPort: { "Ref": "ApplicationLoadBalancerPort" }
-          CidrIp: "0.0.0.0/0"
-  ApplicationLoadBalancerToApplicationIngress:
-    Type: "AWS::EC2::SecurityGroupIngress"
-    Properties:
-      IpProtocol: "tcp"
-      FromPort: { "Ref": "ApplicationPort" }
-      ToPort: { "Ref": "ApplicationPort" }
-      GroupId: { "Ref": "ApplicationAutoscalingSecurityGroup" }
-      SourceSecurityGroupId: { "Ref": "ApplicationLoadBalancerSecurityGroup" }
-  ApplicationLoadBalancerToApplicationEgress:
-    Type: "AWS::EC2::SecurityGroupEgress"
-    Properties:
-      IpProtocol: "tcp"
-      FromPort: { "Ref": "ApplicationPort" }
-      ToPort: { "Ref": "ApplicationPort" }
-      GroupId: { "Ref": "ApplicationLoadBalancerSecurityGroup" }
-      DestinationSecurityGroupId: { "Ref": "ApplicationAutoscalingSecurityGroup" }
-  ApplicationAutoscaling:
-    Type: "AWS::AutoScaling::AutoScalingGroup"
-    DependsOn:
-      - DmesgLogGroup
-      - DockerLogGroup
-      - EcsAgentLogGroup
-      - EcsInitLogGroup
-      - MessagesLogGroup
-    CreationPolicy:
-      ResourceSignal:
-        Count: { "Ref": "ApplicationDesiredCount"}
-        Timeout: "PT15M"
-    UpdatePolicy:
-      AutoScalingRollingUpdate:
-        MinInstancesInService: { "Ref": "ApplicationDesiredCount"}
-        MinSuccessfulInstancesPercent: "100"
-        WaitOnResourceSignals: "true"
-        PauseTime: "PT15M"
-    Properties:
-      VPCZoneIdentifier:
-        - Fn::ImportValue: "DefaultMediumSubnetA"
-        - Fn::ImportValue: "DefaultMediumSubnetB"
-      LaunchConfigurationName: { "Ref" : "ApplicationAutoscalingLaunchConfiguration" }
-      MinSize: "0"
-      MaxSize: "4"
-      DesiredCapacity: { "Ref": "ApplicationDesiredCount"}
-      Tags:
-        - Key: Name
-          Value:
-            Fn::Sub: ${AWS::StackName}-instance
-          PropagateAtLaunch: "true"
-  ApplicationAutoscalingLaunchConfiguration:
-    Type: "AWS::AutoScaling::LaunchConfiguration"
-    Metadata:
-      AWS::CloudFormation::Init:
-        config:
-          commands:
-            10_first_run:
-              command: "sh firstrun.sh"
-              env:
-                STACK_NAME: { "Ref": "AWS::StackName" }
-                AUTOSCALING_GROUP: "ApplicationAutoscaling"
-                AWS_DEFAULT_REGION: { "Ref": "AWS::Region" }
-                ECS_CLUSTER: { "Ref": "ApplicationCluster" }
-                DOCKER_NETWORK_MODE: host
-                PROXY_URL:
-                  Fn::ImportValue: DefaultProxyURL
-              cwd: "/home/ec2-user/"
-          files:
-            /etc/ecs/ecs.config:
-              content: 
-                Fn::Sub: "ECS_CLUSTER=${ApplicationCluster}\n"
-    Properties:
-      ImageId: { "Ref": "ApplicationImageId" }
-      InstanceType: { "Ref": "ApplicationInstanceType" }
-      IamInstanceProfile: { "Ref": "ApplicationAutoscalingInstanceProfile" }
-      KeyName: { "Ref": "ApplicationKeyName" }
-      SecurityGroups:
-        - Ref: "ApplicationAutoscalingSecurityGroup"
-      UserData: 
-        Fn::Base64:
-          Fn::Join: ["\n", [
-            "#!/bin/bash",
-            "set -e",
-            "Fn::Join": ["", [
-              "Fn::Sub": "/opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource ApplicationAutoscalingLaunchConfiguration --region ${AWS::Region}",
-              "    --http-proxy ", "Fn::ImportValue": "DefaultProxyURL", 
-              "    --https-proxy ", "Fn::ImportValue": "DefaultProxyURL"
-            ] ],
-            "Fn::Join": ["", [
-              "Fn::Sub": "/opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --resource ApplicationAutoscaling --region ${AWS::Region}",
-              "    --http-proxy ", "Fn::ImportValue": "DefaultProxyURL", 
-              "    --https-proxy ", "Fn::ImportValue": "DefaultProxyURL"
-            ] ]
-          ] ]
-  ApplicationAutoscalingSecurityGroup:
-    Type: "AWS::EC2::SecurityGroup"
-    Properties:
-      VpcId:
-        Fn::ImportValue: "DefaultVpcId"
-      GroupDescription: "Intake Accelerator Security Group"
-      SecurityGroupIngress:
-        - IpProtocol: "tcp"
-          FromPort: 22
-          ToPort: 22
-          CidrIp:
-            Fn::ImportValue: "DefaultManagementSubnetACidr"
-        - IpProtocol: "tcp"
-          FromPort: 22
-          ToPort: 22
-          CidrIp:
-            Fn::ImportValue: "DefaultManagementSubnetBCidr"
-      SecurityGroupEgress:
-        - IpProtocol: "tcp"
-          FromPort: 3128
-          ToPort: 3128
-          DestinationSecurityGroupId:
-            Fn::ImportValue: DefaultProxySecurityGroup
-        - IpProtocol: "udp"
-          FromPort: 53
-          ToPort: 53
-          CidrIp:
-            Fn::Join: ["", [
-              "Fn::ImportValue": "DefaultVpcDnsServer", "/32"
-            ] ]
-        - IpProtocol: "udp"
-          FromPort: 123
-          ToPort: 123
-          CidrIp: 0.0.0.0/0
-  ApplicationAutoscalingRole:
-    Type: "AWS::IAM::Role"
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: "2012-10-17"
-        Statement:
-          - Effect: "Allow"
-            Principal:
-              Service: [ "ec2.amazonaws.com" ]
-            Action: [ "sts:AssumeRole" ]
-      Path: "/"
-      ManagedPolicyArns: []
-      Policies:
-        - {{ cf_cloudwatch_ec2_logs_policy | to_json }}
-        - PolicyName: "EC2ContainerInstancePolicy"
-          PolicyDocument:
-            Statement:
-              - Effect: "Allow"
-                Action:
-                  - "ecs:RegisterContainerInstance"
-                  - "ecs:DeregisterContainerInstance"
-                Resource: 
-                  Fn::Sub: "arn:aws:ecs:${AWS::Region}:${AWS::AccountId}:cluster/${ApplicationCluster}"
-              - Effect: "Allow"
-                Action:
-                  - "ecs:DiscoverPollEndpoint"
-                  - "ecs:Submit*"
-                  - "ecs:Poll"
-                  - "ecs:StartTelemetrySession"
-                Resource: "*"
-              - Effect: "Allow"
-                Action: 
-                  - "ecr:BatchCheckLayerAvailability"
-                  - "ecr:BatchGetImage"
-                  - "ecr:GetDownloadUrlForLayer"
-                  - "ecr:GetAuthorizationToken"
-                Resource: "*"
-              - Effect: "Allow"
-                Action:
-                - "kms:Decrypt"
-                - "kms:DescribeKey"
-                Resource:
-                  Fn::ImportValue: "CfnMasterKeyArn"
-  ApplicationAutoscalingInstanceProfile:
-    Type: "AWS::IAM::InstanceProfile"
-    Properties:
-      Path: "/"
-      Roles: [ { "Ref": "ApplicationAutoscalingRole" } ]
-  ApplicationCache:
-    Type: "AWS::ElastiCache::ReplicationGroup"
-    Properties:
-      ReplicationGroupDescription: 
-        Fn::Sub: ${AWS::StackName}-redis-cache
-      AutomaticFailoverEnabled: { "Ref": "ApplicationCacheFailover" }
-      NumCacheClusters: { "Ref": "ApplicationCacheInstanceCount" }
-      CacheNodeType: { "Ref": "ApplicationCacheInstanceType" }
-      Port: "6379"
-      Engine: "redis"
-      EngineVersion: { "Ref": "ApplicationCacheVersion" }
-      CacheSubnetGroupName: { "Ref": "ApplicationCacheSubnetGroup" }
-      PreferredMaintenanceWindow: "sun:10:30-sun:12:00"
-      SnapshotWindow: 
-        Fn::If:
-          - "ApplicationCacheFailoverEnabled"
-          - "08:00-10:00"
-          - { "Ref": "AWS::NoValue" }
-      SecurityGroupIds:
-        - { "Ref" : "ApplicationCacheSecurityGroup" }
-  ApplicationCacheSubnetGroup:
-    Type: "AWS::ElastiCache::SubnetGroup"
-    Properties:
-      Description:
-        Fn::Sub: ${AWS::StackName}-redis-cache-subnet-group
-      SubnetIds:
-        - Fn::ImportValue: DefaultHighSubnetA
-        - Fn::ImportValue: DefaultHighSubnetB
-  ApplicationCacheSecurityGroup:
-    Type: "AWS::EC2::SecurityGroup"
-    Properties:
-      GroupDescription:
-        Fn::Sub: ${AWS::StackName}-redis-cache-sg
-      VpcId:
-        Fn::ImportValue: DefaultVpcId
-      SecurityGroupEgress:
-        - IpProtocol: "icmp"
-          FromPort : -1
-          ToPort : -1
-          CidrIp: "192.0.2.0/24"
-  ApplicationToApplicationCacheEgress:
-    Type: "AWS::EC2::SecurityGroupEgress"
-    Properties:
-      IpProtocol: "tcp"
-      FromPort: "6379"
-      ToPort: "6379"
-      GroupId: { "Ref": "ApplicationAutoscalingSecurityGroup" }
-      DestinationSecurityGroupId: { "Ref": "ApplicationCacheSecurityGroup" }
-  ApplicationToApplicationCacheIngress:
-    Type: "AWS::EC2::SecurityGroupIngress"
-    Properties:
-      IpProtocol: "tcp"
-      FromPort: "6379"
-      ToPort: "6379"
-      GroupId: { "Ref": "ApplicationCacheSecurityGroup" }
-      SourceSecurityGroupId: { "Ref": "ApplicationAutoscalingSecurityGroup" }
+      Name: ApplicationFrontEnd
+      AllowedCidr: 0.0.0.0/0
+      Certificate:
+        Fn::ImportValue:
+          Ref: ApplicationFrontEndCertificateArn
+      ConnectionDrainTimeout: 60
+      DnsHostname:
+        Ref: ApplicationHostname
+      DnsDomain:
+        Ref: ApplicationDomain
+      HttpsPort:
+        Ref: ApplicationFrontEndPort
+      Scheme: internet-facing
+      Subnets: Public
+      TargetGroupPort:
+        Ref: ApplicationPort
+      TargetSecurityGroup:
+        Fn::Sub: ${ApplicationCluster.SecurityGroup}
+
   ApplicationCluster:
-    Type: "AWS::ECS::Cluster"
+    Type: Stack::Transform
+    Template: asg.yml.j2
+    Properties:
+      Name: ApplicationCluster
+      DesiredCount:
+        Ref: ApplicationDesiredCount
+      ImageId:
+        Ref: ApplicationImageId
+      InstanceType:
+        Ref: ApplicationInstanceType
+      KeyName:
+        Ref: ApplicationKeyName
+      Subnets: Medium
+      ProxyEnabled: "True"
+      ProxyUrl:
+        Fn::ImportValue: DefaultProxyURL
+      VpcName: Default
+      DockerNetworkMode: "host"
+
+  ApplicationCache:
+    Type: Stack::Transform
+    Template: ecache.yml.j2
+    Properties:
+      FailoverEnabled:
+        Ref: ApplicationCacheFailover
+      NumClusters:
+        Ref: ApplicationCacheInstanceCount
+      NodeType:
+        Ref: ApplicationCacheInstanceType
+      Port: 6379
+      Engine: redis
+      Version:
+        Ref: ApplicationCacheVersion
+      MaintenanceWindow: "sun:10:30-sun:12:00"
+      IngressSecurityGroup:
+        Fn.Sub: ${ApplicationCluster.SecurityGroup}
+
   ApplicationTaskDefinition:
-    Type: "AWS::ECS::TaskDefinition"
+    Type: AWS::ECS::TaskDefinition
     Properties:
       NetworkMode: host
       Volumes:
@@ -405,28 +167,33 @@ Resources:
         LogConfiguration:
           LogDriver: awslogs
           Options:
-            awslogs-group: 
+            awslogs-group:
               Fn::Sub: ${AWS::StackName}/ecs/IntakeAcceleratorService/intake
-            awslogs-region: { "Ref": "AWS::Region" }
+            awslogs-region:
+              Ref: AWS::Region
             awslogs-stream-prefix: docker
         Environment:
           - Name: KMS_SECRET_KEY_BASE
-            Value: { "Ref": "ApplicationSecretKey" }
+            Value:
+              Ref: ApplicationSecretKey
           - Name: RAILS_ENV
             Value: production
           - Name: NODE_ENV
             Value: production
           - Name: API_URL
-            Value: { "Ref": "ApplicationApiUrl" }
+            Value:
+              Ref: ApplicationApiUrl
           - Name: REDIS_HOST
             Value:
-              Fn::Sub: ${ApplicationCache.PrimaryEndPoint.Address}
+              Fn::Sub: ${ApplicationCache.EndPoint}
           - Name: REDIS_PORT
             Value: "6379"
           - Name: AUTHENTICATION
-            Value: { "Ref": "ApplicationAuthentication" }
+            Value:
+              Ref: ApplicationAuthentication
           - Name: AUTHENTICATION_URL
-            Value: { "Ref": "ApplicationAuthenticationUrl" }
+            Value:
+              Ref: ApplicationAuthenticationUrl
           - Name: http_proxy
             Value:
               Fn::ImportValue: DefaultProxyURL
@@ -455,16 +222,19 @@ Resources:
         LogConfiguration:
           LogDriver: awslogs
           Options:
-            awslogs-group: 
+            awslogs-group:
               Fn::Sub: ${AWS::StackName}/ecs/IntakeAcceleratorService/nginx
-            awslogs-region: { "Ref": "AWS::Region" }
+            awslogs-region:
+              Ref: AWS::Region
             awslogs-stream-prefix: docker
         PortMappings:
-        - ContainerPort: { "Ref": "ApplicationPort" }
+        - ContainerPort:
+            Ref: ApplicationPort
           Protocol: tcp
         Environment:
-          - Name: HTTP_PORT 
-            Value: { "Ref": "ApplicationPort" }
+          - Name: HTTP_PORT
+            Value:
+              Ref: ApplicationPort
           - Name: WEB_ROOT
             Value: /ca_intake/public
           - Name: UPSTREAM_URL
@@ -475,88 +245,61 @@ Resources:
         VolumesFrom:
           - SourceContainer: intake
             ReadOnly: "true"
+  IntakeAcceleratorServiceLogGroup:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Delete
+    Properties:
+      LogGroupName:
+        Fn::Sub: ${AWS::StackName}/ecs/IntakeAcceleratorService/intake
+      RetentionInDays:
+        Ref: LogRetention
+  IntakeAcceleratorNginxLogGroup:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Delete
+    Properties:
+      LogGroupName:
+        Fn::Sub: ${AWS::StackName}/ecs/IntakeAcceleratorService/nginx
+      RetentionInDays:
+        Ref: LogRetention
   IntakeAcceleratorService:
-    Type: "AWS::ECS::Service"
+    Type: AWS::ECS::Service
     DependsOn:
-      - ApplicationLoadBalancer
-      - ApplicationAutoscaling
+      - ApplicationFrontEndHttpsListener
+      - ApplicationClusterAutoscalingGroup
       - IntakeAcceleratorServiceLogGroup
       - IntakeAcceleratorNginxLogGroup
     Properties:
-      Cluster: { "Ref": "ApplicationCluster" }
-      TaskDefinition: { "Ref": "ApplicationTaskDefinition" }
-      DesiredCount: { "Ref": "ApplicationDesiredCount"}
+      Cluster:
+        Ref: ApplicationClusterEcsCluster
+      TaskDefinition:
+        Ref: ApplicationTaskDefinition
+      DesiredCount:
+        Ref: ApplicationDesiredCount
       DeploymentConfiguration:
           MinimumHealthyPercent:
             Fn::If:
-              - "ApplicationSingleInstanceCondition"
+              - ApplicationSingleInstanceCondition
               - 0
               - 50
           MaximumPercent: 200
       LoadBalancers:
         - ContainerName: nginx
-          ContainerPort: { "Ref": "ApplicationPort" }
-          TargetGroupArn: { "Ref": "IntakeAcceleratorServiceTargetGroup" }
-      Role: { "Ref": "EcsServiceRole" }
+          ContainerPort:
+            Ref: ApplicationPort
+          TargetGroupArn:
+            Fn::Sub: ${ApplicationFrontEnd.TargetGroup}
+      Role:
+        Ref: EcsServiceRole
   EcsServiceRole:
-    Type: "AWS::IAM::Role"
+    Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
-          - Effect: "Allow"
-            Principal: 
+          - Effect: Allow
+            Principal:
               Service: [ "ecs.amazonaws.com" ]
             Action: [ "sts:AssumeRole" ]
-      Path: "/"
+      Path: /
       ManagedPolicyArns:
-        - "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceRole"
-  DmesgLogGroup:
-    Type: "AWS::Logs::LogGroup"
-    DeletionPolicy: Delete
-    Properties:
-      LogGroupName: 
-        Fn::Sub: ${AWS::StackName}/ec2/ApplicationAutoscaling/var/log/dmesg
-      RetentionInDays: { "Ref": "LogRetention" }
-  DockerLogGroup:
-    Type: "AWS::Logs::LogGroup"
-    DeletionPolicy: Delete
-    Properties:
-      LogGroupName:
-        Fn::Sub: ${AWS::StackName}/ec2/ApplicationAutoscaling/var/log/docker
-      RetentionInDays: { "Ref": "LogRetention" }
-  EcsAgentLogGroup:
-    Type: "AWS::Logs::LogGroup"
-    DeletionPolicy: Delete
-    Properties:
-      LogGroupName: 
-        Fn::Sub: ${AWS::StackName}/ec2/ApplicationAutoscaling/var/log/ecs/ecs-agent
-      RetentionInDays: { "Ref": "LogRetention" }
-  EcsInitLogGroup:
-    Type: "AWS::Logs::LogGroup"
-    DeletionPolicy: Delete
-    Properties:
-      LogGroupName:
-        Fn::Sub: ${AWS::StackName}/ec2/ApplicationAutoscaling/var/log/ecs/ecs-init
-      RetentionInDays: { "Ref": "LogRetention" }
-  MessagesLogGroup:
-    Type: "AWS::Logs::LogGroup"
-    DeletionPolicy: Delete
-    Properties:
-      LogGroupName:
-        Fn::Sub: ${AWS::StackName}/ec2/ApplicationAutoscaling/var/log/messages
-      RetentionInDays: { "Ref": "LogRetention" }
-  IntakeAcceleratorServiceLogGroup:
-    Type: "AWS::Logs::LogGroup"
-    DeletionPolicy: Delete
-    Properties:
-      LogGroupName:
-        Fn::Sub: ${AWS::StackName}/ecs/IntakeAcceleratorService/intake
-      RetentionInDays: { "Ref": "LogRetention" }
-  IntakeAcceleratorNginxLogGroup:
-    Type: "AWS::Logs::LogGroup"
-    DeletionPolicy: Delete
-    Properties:
-      LogGroupName:
-        Fn::Sub: ${AWS::StackName}/ecs/IntakeAcceleratorService/nginx
-      RetentionInDays: { "Ref": "LogRetention" }
+        - arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceRole
