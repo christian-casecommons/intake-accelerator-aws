@@ -17,21 +17,21 @@ Parameters:
     Type: String
     Description: Type of cache instance
     Default: cache.t2.micro
-  Port
+  Port:
     Type: Number
     Description: Port number on which replication group accepts connection
     Default: 6379
-  Engine
+  Engine:
     Type: String
     Description: Name of Cache Engine
     AllowedValues:
       - "Redis"
     Default: "Redis"
-  Version
+  Version:
     Type: String
     Description: Version number of cache engine
     Default: "3.2.4"
-  MaintenanceWindow
+  MaintenanceWindow:
     Type: String
     Description: Weekly time range during which maintenance can occur
   Subnets:
@@ -54,16 +54,15 @@ Parameters:
 Conditions:
   CacheFailoverEnabled:
     Fn::Equals:
-      - Ref : FailoverEnabled
+      - Ref: FailoverEnabled
       - "True"
 
-  ElastiCacheInstance:
+Resources:
+  ElastiCache:
     Type: AWS::ElastiCache::ReplicationGroup
     Properties:
       ReplicationGroupDescription:
-        Fn::Sub:
-          - ${AWS::StackName}-redis-cache
-          - { EngineName: !Ref Engine }
+        Fn::Sub: ${AWS::StackName}-redis-cache
       AutomaticFailoverEnabled:
         Ref: FailoverEnabled
       NumCacheClusters:
@@ -86,8 +85,7 @@ Conditions:
           - "08:00-10:00"
           - Ref: AWS::NoValue
       SecurityGroupIds:
-        - Ref : SecurityGroup
-
+        - Ref: SecurityGroup
   SubnetGroup:
     Type: AWS::ElastiCache::SubnetGroup
     Properties:
@@ -95,10 +93,9 @@ Conditions:
         Fn::Sub: ${AWS::StackName}-redis-cache-subnet-group
       SubnetIds:
         - Fn::ImportValue:
-          Fn::Sub ${VpcName}${Subnets}SubnetA
+            Fn::Sub ${VpcName}${Subnets}SubnetA
         - Fn::ImportValue:
-          Fn::Sub ${VpcName}${Subnets}SubnetB
-
+            Fn::Sub ${VpcName}${Subnets}SubnetB
   SecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -132,13 +129,12 @@ Conditions:
         Ref: Port
       ToPort:
         Ref: Port
-      GroupId: 
+      GroupId:
         Ref: SecurityGroup
       SourceSecurityGroupId:
         Ref: IngressSecurityGroup
-
-OUtputs:
+Outputs:
   EndPoint:
-    Description: Elasticache instance endpoint address
+    Description: Elasticache instance primary endpoint
     Value:
-      Fn.Sub: ${ElastiCacheInstance.PrimaryEndPoint.Address}
+      Fn.Sub: ${ElastiCache.PrimaryEndpoint.Address}
