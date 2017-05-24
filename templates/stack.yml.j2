@@ -140,6 +140,7 @@ Resources:
         Fn::ImportValue: DefaultProxyURL
       VpcName: Default
       DockerNetworkMode: "host"
+      CreateEcsTaskRunner: "False"
 
   ApplicationCache:
     Type: Stack::Transform
