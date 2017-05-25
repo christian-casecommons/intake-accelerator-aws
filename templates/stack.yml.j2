@@ -63,7 +63,7 @@ Parameters:
     AllowedValues:
       - "true"
       - "false"
-  ApplicationCentralizedSesion:
+  ApplicationCentralizedSession:
     Type: String
     Description: Enables or disables centralized session management
     Default: "false"
@@ -192,7 +192,7 @@ Resources:
               Ref: ApplicationApiUrl
           - Name: CENTRALIZED_SESSIONS
             Value:
-              Ref: ApplicationCentralizedSesion
+              Ref: ApplicationCentralizedSession
           - Name: REDIS_HOST
             Value:
               Fn::Sub: ${ApplicationCache.EndPoint}
