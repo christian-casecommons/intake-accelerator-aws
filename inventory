@@ -1,5 +1,8 @@
 [dev]
 dev ansible_connection=local
 
+[cbp-dev]
+cbp-dev ansible_connection=local ansible_python_interpreter=python
+
 [prod]
 prod ansible_connection=local

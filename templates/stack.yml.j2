@@ -44,7 +44,7 @@ Parameters:
   ApplicationCacheInstanceCount:
     Type: Number
     Description: Number of Redis cache instances
-    Default: 1
+    Default: "1"
   ApplicationCacheInstanceType:
     Type: String
     Description: Type of Redis cache instance
@@ -89,7 +89,7 @@ Conditions:
       - Ref: ApplicationDesiredCount
       - 1
   ApplicationCacheFailoverEnabled:
-    Fn::Equals: 
+    Fn::Equals:
       - { "Ref" : "ApplicationCacheFailover" }
       - "True"
 
@@ -97,15 +97,15 @@ Resources:
   ApplicationDnsRecord:
     Type: "AWS::Route53::RecordSet"
     Properties:
-      Name: 
+      Name:
         Fn::Sub: "${ApplicationHostname}.${ApplicationDomain}"
       TTL: "300"
-      HostedZoneName: 
+      HostedZoneName:
         Fn::Sub: "${ApplicationDomain}."
       Type: "CNAME"
-      Comment: 
+      Comment:
         Fn::Sub: "Intake Accelerator Application - ${AWS::StackName}"
-      ResourceRecords: 
+      ResourceRecords:
         - Fn::Sub: "${ApplicationLoadBalancer.DNSName}"
   ApplicationLoadBalancer:
     Type: "AWS::ElasticLoadBalancingV2::LoadBalancer"
@@ -116,7 +116,7 @@ Resources:
       Subnets:
         - Fn::ImportValue: DefaultPublicSubnetA
         - Fn::ImportValue: DefaultPublicSubnetB
-      LoadBalancerAttributes: 
+      LoadBalancerAttributes:
         - Key: "deletion_protection.enabled"
           Value: false
         - Key: "idle_timeout.timeout_seconds"
@@ -225,7 +225,7 @@ Resources:
               cwd: "/home/ec2-user/"
           files:
             /etc/ecs/ecs.config:
-              content: 
+              content:
                 Fn::Sub: "ECS_CLUSTER=${ApplicationCluster}\n"
     Properties:
       ImageId: { "Ref": "ApplicationImageId" }
@@ -234,19 +234,19 @@ Resources:
       KeyName: { "Ref": "ApplicationKeyName" }
       SecurityGroups:
         - Ref: "ApplicationAutoscalingSecurityGroup"
-      UserData: 
+      UserData:
         Fn::Base64:
           Fn::Join: ["\n", [
             "#!/bin/bash",
             "set -e",
             "Fn::Join": ["", [
               "Fn::Sub": "/opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource ApplicationAutoscalingLaunchConfiguration --region ${AWS::Region}",
-              "    --http-proxy ", "Fn::ImportValue": "DefaultProxyURL", 
+              "    --http-proxy ", "Fn::ImportValue": "DefaultProxyURL",
               "    --https-proxy ", "Fn::ImportValue": "DefaultProxyURL"
             ] ],
             "Fn::Join": ["", [
               "Fn::Sub": "/opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --resource ApplicationAutoscaling --region ${AWS::Region}",
-              "    --http-proxy ", "Fn::ImportValue": "DefaultProxyURL", 
+              "    --http-proxy ", "Fn::ImportValue": "DefaultProxyURL",
               "    --https-proxy ", "Fn::ImportValue": "DefaultProxyURL"
             ] ]
           ] ]
@@ -305,7 +305,7 @@ Resources:
                 Action:
                   - "ecs:RegisterContainerInstance"
                   - "ecs:DeregisterContainerInstance"
-                Resource: 
+                Resource:
                   Fn::Sub: "arn:aws:ecs:${AWS::Region}:${AWS::AccountId}:cluster/${ApplicationCluster}"
               - Effect: "Allow"
                 Action:
@@ -315,7 +315,7 @@ Resources:
                   - "ecs:StartTelemetrySession"
                 Resource: "*"
               - Effect: "Allow"
-                Action: 
+                Action:
                   - "ecr:BatchCheckLayerAvailability"
                   - "ecr:BatchGetImage"
                   - "ecr:GetDownloadUrlForLayer"
@@ -335,7 +335,7 @@ Resources:
   ApplicationCache:
     Type: "AWS::ElastiCache::ReplicationGroup"
     Properties:
-      ReplicationGroupDescription: 
+      ReplicationGroupDescription:
         Fn::Sub: ${AWS::StackName}-redis-cache
       AutomaticFailoverEnabled: { "Ref": "ApplicationCacheFailover" }
       NumCacheClusters: { "Ref": "ApplicationCacheInstanceCount" }
@@ -345,7 +345,7 @@ Resources:
       EngineVersion: { "Ref": "ApplicationCacheVersion" }
       CacheSubnetGroupName: { "Ref": "ApplicationCacheSubnetGroup" }
       PreferredMaintenanceWindow: "sun:10:30-sun:12:00"
-      SnapshotWindow: 
+      SnapshotWindow:
         Fn::If:
           - "ApplicationCacheFailoverEnabled"
           - "08:00-10:00"
@@ -405,7 +405,7 @@ Resources:
         LogConfiguration:
           LogDriver: awslogs
           Options:
-            awslogs-group: 
+            awslogs-group:
               Fn::Sub: ${AWS::StackName}/ecs/IntakeAcceleratorService/intake
             awslogs-region: { "Ref": "AWS::Region" }
             awslogs-stream-prefix: docker
@@ -435,6 +435,9 @@ Resources:
               Fn::ImportValue: DefaultProxyURL
           - Name: no_proxy
             Value: "169.254.169.254,localhost"
+          - Name: AWS_DEFAULT_REGION
+            Value:
+              Ref: AWS::Region
         MountPoints:
           - SourceVolume: webroot
             ContainerPath: /tmp
@@ -455,7 +458,7 @@ Resources:
         LogConfiguration:
           LogDriver: awslogs
           Options:
-            awslogs-group: 
+            awslogs-group:
               Fn::Sub: ${AWS::StackName}/ecs/IntakeAcceleratorService/nginx
             awslogs-region: { "Ref": "AWS::Region" }
             awslogs-stream-prefix: docker
@@ -463,7 +466,7 @@ Resources:
         - ContainerPort: { "Ref": "ApplicationPort" }
           Protocol: tcp
         Environment:
-          - Name: HTTP_PORT 
+          - Name: HTTP_PORT
             Value: { "Ref": "ApplicationPort" }
           - Name: WEB_ROOT
             Value: /ca_intake/public
@@ -505,7 +508,7 @@ Resources:
         Version: "2012-10-17"
         Statement:
           - Effect: "Allow"
-            Principal: 
+            Principal:
               Service: [ "ecs.amazonaws.com" ]
             Action: [ "sts:AssumeRole" ]
       Path: "/"
@@ -515,7 +518,7 @@ Resources:
     Type: "AWS::Logs::LogGroup"
     DeletionPolicy: Delete
     Properties:
-      LogGroupName: 
+      LogGroupName:
         Fn::Sub: ${AWS::StackName}/ec2/ApplicationAutoscaling/var/log/dmesg
       RetentionInDays: { "Ref": "LogRetention" }
   DockerLogGroup:
@@ -529,7 +532,7 @@ Resources:
     Type: "AWS::Logs::LogGroup"
     DeletionPolicy: Delete
     Properties:
-      LogGroupName: 
+      LogGroupName:
         Fn::Sub: ${AWS::StackName}/ec2/ApplicationAutoscaling/var/log/ecs/ecs-agent
       RetentionInDays: { "Ref": "LogRetention" }
   EcsInitLogGroup:

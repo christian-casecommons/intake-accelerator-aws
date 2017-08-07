@@ -1,0 +1,34 @@
+# STS settings
+Sts.Role: arn:aws:iam::334274607422:role/admin
+Stack.Name: intake-app
+Sts.Region: us-east-1
+
+# Application settings
+Stack.Inputs.ApplicationKeyName: admin
+Stack.Inputs.ApplicationInstanceType: t2.micro
+Stack.Inputs.ApplicationDesiredCount: "1"
+Stack.Inputs.ApplicationImageId: ami-9e6d4ae5
+Stack.Inputs.ApplicationDockerImage: 334274607422.dkr.ecr.us-east-1.amazonaws.com/casecommons/intake
+Stack.Inputs.ApplicationDockerImageTag: latest
+Stack.Inputs.ApplicationLoadBalancerPort: "443"
+Stack.Inputs.ApplicationPort: "3000"
+Stack.Inputs.ApplicationSecretKey: AQICAHjd0+m+hAx7gz+jpQq4ecaZ0zpnuPyeR70biJmJv/nTfAEXtwJF3INwd1kMqn5A5IozAAAAizCBiAYJKoZIhvcNAQcGoHsweQIBADB0BgkqhkiG9w0BBwEwHgYJYIZIAWUDBAEuMBEEDGfcLd060ymJcTRFOwIBEIBHiAxFnorJf0Vy4qmXxIzZS27lGr0dTz6XJV0aXNuKuTW0XfRSSy6phcBfd6lt/Qs2UVLaUnZvTMT3svRc7GtOXm56vgCgpMM=
+Stack.Inputs.ApplicationApiUrl: https://intake-api.dev.casebookplatform.org/
+Stack.Inputs.ApplicationAuthentication: "false"
+Stack.Inputs.ApplicationAuthenticationUrl: http://perry.intake.cwds.tabordasolutions.net
+Stack.Inputs.ApplicationHostname: intake-app
+Stack.Inputs.ApplicationDomain: dev.casebookplatform.org
+
+# Nginx settings
+Stack.Inputs.NginxDockerImage: 334274607422.dkr.ecr.us-east-1.amazonaws.com/casecommons/nginx
+Stack.Inputs.NginxDockerImageTag: latest
+
+# Load balancer settings
+Stack.Inputs.ApplicationLoadBalancerCertificateArn: DevCasebookplatformOrgCertificateArn
+
+# Log settings
+Stack.Inputs.LogRetention: "30"
+
+# Add a global override to resources of the given type
+AWS::Logs::LogGroup:
+  DeletionPolicy: Delete
