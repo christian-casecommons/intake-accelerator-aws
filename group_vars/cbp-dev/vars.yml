@@ -14,7 +14,7 @@ Stack.Inputs.ApplicationLoadBalancerPort: "443"
 Stack.Inputs.ApplicationPort: "3000"
 Stack.Inputs.ApplicationSecretKey: AQICAHjd0+m+hAx7gz+jpQq4ecaZ0zpnuPyeR70biJmJv/nTfAEXtwJF3INwd1kMqn5A5IozAAAAizCBiAYJKoZIhvcNAQcGoHsweQIBADB0BgkqhkiG9w0BBwEwHgYJYIZIAWUDBAEuMBEEDGfcLd060ymJcTRFOwIBEIBHiAxFnorJf0Vy4qmXxIzZS27lGr0dTz6XJV0aXNuKuTW0XfRSSy6phcBfd6lt/Qs2UVLaUnZvTMT3svRc7GtOXm56vgCgpMM=
 Stack.Inputs.ApplicationApiUrl: https://intake-api.dev.casebookplatform.org/
-Stack.Inputs.ApplicationAuthentication: "true"
+Stack.Inputs.ApplicationAuthentication: "false"
 Stack.Inputs.ApplicationAuthenticationUrl: http://perry.intake.cwds.tabordasolutions.net
 Stack.Inputs.ApplicationHostname: intake
 Stack.Inputs.ApplicationDomain: dev.casebookplatform.org
